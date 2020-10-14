@@ -1,12 +1,16 @@
+apptools==4.5.0
 certifi==2020.6.20
 cftime @ file:///D:/bld/cftime_1602504645041/work
+configobj==5.0.6
 cycler==0.10.0
+envisage==4.9.2
 fastcache @ file:///D:/bld/fastcache_1602440774291/work
 gmsh==4.6.0.post3
 h5py @ file:///D:/bld/h5py_1602551956383/work
 importlib-metadata @ file:///home/conda/feedstock_root/build_artifacts/importlib-metadata_1602263269022/work
 kiwisolver @ file:///D:/bld/kiwisolver_1602517426007/work
 matplotlib @ file:///D:/bld/matplotlib-suite_1602600992856/work
+mayavi==4.7.2
 meshio @ file:///home/conda/feedstock_root/build_artifacts/meshio_1602092536468/work
 mkl-service==2.3.0
 mock @ file:///D:/bld/mock_1602395119602/work
@@ -17,6 +21,8 @@ numpy @ file:///D:/bld/numpy_1602429292582/work
 olefile==0.46
 Pillow @ file:///D:/bld/pillow_1602494159100/work
 psutil @ file:///D:/bld/psutil_1602264219517/work
+pyface==7.0.1
+Pygments==2.7.1
 pyparsing==2.4.7
 pyreadline @ file:///D:/bld/pyreadline_1602253143868/work
 python-dateutil==2.8.1
@@ -26,6 +32,8 @@ six @ file:///home/conda/feedstock_root/build_artifacts/six_1590081179328/work
 sympy @ file:///D:/bld/sympy_1602465837198/work
 tables==3.6.1
 tornado @ file:///D:/bld/tornado_1602489103741/work
+traits==6.1.1
+traitsui==7.0.1
 vtk==9.0.1
 wincertstore==0.2
 zipp @ file:///home/conda/feedstock_root/build_artifacts/zipp_1601765966131/work

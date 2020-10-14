@@ -19,7 +19,7 @@ from sfepy.mechanics.matcoefs import stiffness_from_youngpoisson
 
 
 # set the total loading (negative = compression, positive = tension)
-loading = 5e6
+loading = -2e6
 
 raw_mesh = Mesh.from_file('meshes/strut_test.msh')  # load the gmesh file
 data = list(raw_mesh._get_io_data(cell_dim_only=[3]))  # strip non-3d elements
