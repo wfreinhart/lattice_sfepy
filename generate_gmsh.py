@@ -1,6 +1,7 @@
 import gmsh
 import sys
 import numpy as np
+from sfepy.discrete.fem import Mesh
 # from scipy.spatial.transform import Rotation
 
 gmsh.initialize()
@@ -26,7 +27,7 @@ edges = np.array([[0, 1],
 for dim in range(3):
     n = np.zeros([3, 1])
     n[dim] = 1
-    M = np.eye(3) - 2 * n @ n.T
+    M = np.eye(3) - 2 * n @ n.T  # I
     # angles = np.zeros(3)
     # angles[dim] = np.pi/2
     # R = Rotation.from_euler('xyz', angles).as_matrix()
@@ -95,12 +96,13 @@ aggTags, tagsMap = gmsh.model.occ.fuse([(3, s) for s in struts[1:]], [(3, struts
 #     aggTags, tagsMap = gmsh.model.occ.fuse(aggTags, copyTags)
 
 # create the top and bottom plates for the sandwich panel
+overhang = 0.25
 plates = []
 for i, z in enumerate([np.min(points[:, 2]), np.max(points[:, 2])]):
     delta_z = strut_rad
     if i == 0:
         delta_z *= -1
-    plates.append(gmsh.model.occ.addBox(0, 0, z, *np.array([1, 1, delta_z])))
+    plates.append(gmsh.model.occ.addBox(-overhang, -overhang, z, *np.array([1+2*overhang, 1+2*overhang, delta_z])))
 gmsh.model.occ.fuse(aggTags, [(3, p) for p in plates])
 
 # Boolean operations with OpenCASCADE always create new entities. By default the
@@ -131,9 +133,9 @@ gmsh.model.addPhysicalGroup(3, aggTags)
 # To identify points or other bounding entities you can take advantage of the
 # `getEntities()', `getBoundary()' and `getEntitiesInBoundingBox()' functions:
 
-lcar1 = .050
-lcar2 = .0005
-lcar3 = .055
+lcar1 = .03
+# lcar2 = .0005
+# lcar3 = .055
 
 # Assign a mesh size to all the points:
 gmsh.model.mesh.setSize(gmsh.model.getEntities(0), lcar1)
@@ -151,9 +153,15 @@ gmsh.model.mesh.setSize(gmsh.model.getEntities(0), lcar1)
 gmsh.model.mesh.generate(3)
 
 gmsh.write("meshes/%s.msh" % mesh_name)
+gmsh.write("meshes/%s.vtk" % mesh_name)
 
 # Launch the GUI to see the results:
 if '-nopopup' not in sys.argv:
     gmsh.fltk.run()
 
 gmsh.finalize()
+
+raw_mesh = Mesh.from_file("meshes/%s.msh" % mesh_name)  # load the gmesh file
+data = list(raw_mesh._get_io_data(cell_dim_only=[3]))  # strip non-3d elements
+mesh = Mesh.from_data(raw_mesh.name, *data)
+mesh.write("meshes/%s.vtk" % mesh_name)
