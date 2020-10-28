@@ -2,7 +2,7 @@
 
 run the following command to install dependencies:
 
-`pip install -r requirements.txt`
+`conda env create -f environment.yml`
 
 # scripts
 
