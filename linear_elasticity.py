@@ -1,5 +1,5 @@
 from __future__ import absolute_import
-from sfepy.mechanics.matcoefs import stiffness_from_lame
+from sfepy.mechanics.matcoefs import stiffness_from_lame, stiffness_from_youngpoisson
 from sfepy.mechanics.tensors import get_von_mises_stress
 
 
@@ -36,7 +36,7 @@ regions = {
 }
 
 materials = {
-    'solid' : ({'D': stiffness_from_lame(dim=3, lam=1e1, mu=1e0)},),
+    'solid' : ({'D': stiffness_from_youngpoisson(dim=3, young=1e9, poisson=0.24)},),
 }
 
 fields = {
