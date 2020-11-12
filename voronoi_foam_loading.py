@@ -45,43 +45,89 @@ t1 = Term.new('dw_lin_elastic(m.D, v, u)', integral, omega, m=m, v=v, u=u)
 eq1 = Equation('balance_of_forces', t1)
 eqs = Equations([eq1])
 
-z_displacements = [5]
+
+# materials = {
+#     'solid': ({'K': 1e3, # bulk modulus
+#                'mu': 20e0, # shear modulus of neoHookean term
+#                'kappa': 10e0, # shear modulus of Mooney-Rivlin term
+#                },),
+# }
+# equations = {
+#     'balance': """dw_ul_he_neohook.3.Omega( solid.mu, v, u )
+#                 + dw_ul_he_mooney_rivlin.3.Omega(solid.kappa, v, u)
+#                 + dw_ul_bulk_penalty.3.Omega( solid.K, v, u )
+#                 = 0""",
+#     }
+
+solid = Material('solid', K=1e3, mu=20e0, kappa=10e0, rho=8000.0)
+t1 = Term.new('dw_ul_he_neohook(solid.mu, v, u)', integral, omega, solid=solid, v=v, u=u)
+t2 = Term.new('dw_ul_he_mooney_rivlin(solid.kappa, v, u)', integral, omega, solid=solid, v=v, u=u)
+t3 = Term.new('dw_ul_bulk_penalty(solid.K, v, u)', integral, omega, solid=solid, v=v, u=u)
+eq1 = Equation('balance of forces', t1 + t2 + t3)
+eqs = Equations([eq1])
+
+z_displacements = np.linspace(1e-1, 5e-1, 5)
 vm_stresses = np.zeros([len(z_displacements), 2])
 for i, z_displacement in enumerate(z_displacements):
 
     fix_bot = EssentialBC('fix_bot', bot, {'u.all': 0.0})
     fix_top = EssentialBC('fix_top', top, {'u.[0,1]': 0.0, 'u.[2]': -z_displacement})
 
+    # ls = ScipyDirect({})
+    #
+    # nls_status = IndexedStruct()
+    # nls = Newton({}, lin_solver=ls, status=nls_status)
+    # # 'i_max': 1, 'eps_a': 1e-10
+    #
+    # pb = Problem('elasticity', equations=eqs)
+    # pb.save_regions_as_groups('regions')
+    #
+    # pb.set_bcs(ebcs=Conditions([fix_bot, fix_top]))
+    #
+    # pb.set_solver(nls)
+    #
+    # status = IndexedStruct()
+    # state = pb.solve(status=status)
+    #
+    # strain = pb.evaluate('ev_cauchy_strain.2.Omega(u)', u=u, mode='el_avg')
+    # stress = pb.evaluate('ev_cauchy_stress.2.Omega(m.D, u)', m=m, u=u, mode='el_avg')
+    # vms = get_von_mises_stress(stress.squeeze())
+    # np.savetxt('tmp_vms.dat', vms)
+    # vms = np.loadtxt('tmp_vms.dat')
+    #
+    # vol = mesh.cmesh.get_volumes(3)
+    # np.savetxt('tmp_vol.dat', vol)
+    # vol = np.loadtxt('tmp_vol.dat')
+    #
+    # vm_stresses[i, 0] = np.sum(vms * vol) / np.sum(vol)
+    # vm_stresses[i, 1] = np.max(vms)
+    #
+    # pb.save_state('voronoi_foam_%f.vtk' % z_displacement, state)
+    #
+    ### Solvers ###
     ls = ScipyDirect({})
-
     nls_status = IndexedStruct()
-    nls = Newton({}, lin_solver=ls, status=nls_status)
-    # 'i_max': 1, 'eps_a': 1e-10
+    nls = Newton(
+        {'i_max' : 20},
+        lin_solver=ls, status=nls_status
+    )
 
-    pb = Problem('elasticity', equations=eqs)
-    pb.save_regions_as_groups('regions')
+    ### Problem ###
+    pb = Problem('hyper', equations=equations)
+    pb.set_bcs(ebcs=ebcs)
+    pb.set_ics(ics=Conditions([]))
+    tss = SimpleTimeSteppingSolver(ts, nls=nls, context=pb)
+    pb.set_solver(tss)
 
-    pb.set_bcs(ebcs=Conditions([fix_bot, fix_top]))
+    ### Solution ###
+    axial_stress = []
+    axial_displacement = []
+    def stress_strain_fun(*args, **kwargs):
+        return stress_strain(
+            *args, order=order, global_stress=axial_stress,
+            global_displacement=axial_displacement, **kwargs)
 
-    pb.set_solver(nls)
-
-    status = IndexedStruct()
-    state = pb.solve(status=status)
-
-    strain = pb.evaluate('ev_cauchy_strain.2.Omega(u)', u=u, mode='el_avg')
-    stress = pb.evaluate('ev_cauchy_stress.2.Omega(m.D, u)', m=m, u=u, mode='el_avg')
-    vms = get_von_mises_stress(stress.squeeze())
-    np.savetxt('tmp_vms.dat', vms)
-    vms = np.loadtxt('tmp_vms.dat')
-
-    vol = mesh.cmesh.get_volumes(3)
-    np.savetxt('tmp_vol.dat', vol)
-    vol = np.loadtxt('tmp_vol.dat')
-
-    vm_stresses[i, 0] = np.sum(vms * vol) / np.sum(vol)
-    vm_stresses[i, 1] = np.max(vms)
-
-    pb.save_state('voronoi_foam_%f.vtk' % z_displacement, state)
+    pb.solve(save_results=True, post_process_hook=stress_strain_fun)
 
 show = True
 if show:

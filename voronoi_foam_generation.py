@@ -143,7 +143,7 @@ for i, j in [x for x in vor.ridge_vertices if -1 not in x]:
     length = np.linalg.norm(vec)
     angle = np.arctan2(vec[1], vec[0])
     bxy = verts[0] - txy
-    boxes.append(gmsh.model.occ.addBox(*bxy, 0, length+thickness/2, thickness, L[2]))
+    boxes.append(gmsh.model.occ.addBox(*bxy, 0, length+thickness/3, thickness, L[2]))
     gmsh.model.occ.rotate([(3, boxes[-1])], *verts[0], 0, *z_axis, angle)
     nan_points_trunc = np.vstack([nan_points_trunc, np.vstack([verts, [np.nan] * 2])])
 
@@ -206,11 +206,8 @@ gmsh.model.addPhysicalGroup(3, aggTags)
 # To identify points or other bounding entities you can take advantage of the
 # `getEntities()', `getBoundary()' and `getEntitiesInBoundingBox()' functions:
 
-lcar1 = 2
-# lcar2 = .0005
-# lcar3 = .055
-
 # Assign a mesh size to all the points:
+lcar1 = 8
 gmsh.model.mesh.setSize(gmsh.model.getEntities(0), lcar1)
 
 # Override this constraint on the points of the five spheres:
@@ -229,13 +226,18 @@ gmsh.write("meshes/%s.msh" % mesh_name)
 gmsh.write("meshes/%s.vtk" % mesh_name)
 gmsh.write("meshes/%s.stl" % mesh_name)
 
+raw_mesh = Mesh.from_file("meshes/%s.msh" % mesh_name)  # load the gmesh file
+data = list(raw_mesh._get_io_data(cell_dim_only=[3]))  # strip non-3d elements
+mesh = Mesh.from_data(raw_mesh.name, *data)
+mesh.write("meshes/%s.vtk" % mesh_name)
+
+# lcar2 = 100
+# gmsh.model.mesh.setSize(gmsh.model.getEntities(0), lcar2)
+# gmsh.model.mesh.generate(3)
+# gmsh.write("meshes/%s.stl" % mesh_name)
+
 # Launch the GUI to see the results:
 if '-nopopup' not in sys.argv:
     gmsh.fltk.run()
 
 gmsh.finalize()
-
-raw_mesh = Mesh.from_file("meshes/%s.msh" % mesh_name)  # load the gmesh file
-data = list(raw_mesh._get_io_data(cell_dim_only=[3]))  # strip non-3d elements
-mesh = Mesh.from_data(raw_mesh.name, *data)
-mesh.write("meshes/%s.vtk" % mesh_name)
